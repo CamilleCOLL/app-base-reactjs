@@ -1,0 +1,34 @@
+name: CI - Build & test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Configurer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm install
+
+      - name: Builder l'application
+        run: npm run build
+
+      - name: Lancer l'application en arrière-plan
+        run: npm start &
+
+      - name: Attendre le démarrage du serveur
+        run: npx --yes wait-on http://localhost:3000
+
+      - name: Vérifier le fonctionnement avec curl
+        run: curl -I http://localhost:3000 | grep "200"
