@@ -1,8 +1,11 @@
-name: CI - Build & test
+name: CI - Build & test + Scan Trivy
 
 on:
   push:
   pull_request:
+
+permissions:
+  security-events: write
 
 jobs:
   build-and-test:
@@ -32,3 +35,24 @@ jobs:
 
       - name: Vérifier le fonctionnement avec curl
         run: curl -I http://localhost:3000 | grep "200"
+
+      - name: Scan Trivy (Export SARIF)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Uploader rapport SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() # Garantit l'envoi du rapport même en cas d'erreur
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Scan Trivy - Contrôle de sécurité
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
